@@ -34,20 +34,24 @@ scene.add(cow);
 const gui = new GUI();
 const options = {
   scale: 1,
-  doubleSize: () => {
+  x2: () => {
     changeScale(2, Easing.Elastic.Out);
   },
-  halfSize: () => {
+  'x0.5': () => {
     changeScale(0.5, Easing.Elastic.Out);
   },
+
+  stretchX: 1,
+  stretchY: 1,
+  stretchZ: 1,
 };
 
 const scaling = gui.addFolder('Scaling');
 scaling.add(options, 'scale', 0, 2).onChange((e) => {
   cow.scale.set(e, e, e);
 });
-scaling.add(options, 'doubleSize');
-scaling.add(options, 'halfSize');
+scaling.add(options, 'x2');
+scaling.add(options, 'x0.5');
 
 let currentScale = { ...cow.scale };
 const scaleTween = new Tween(currentScale);
@@ -61,6 +65,17 @@ function changeScale(target, ease) {
     })
     .start();
 }
+
+const stretching = gui.addFolder('Stretching');
+stretching.add(options, 'stretchX', 0, 2).onChange((e) => {
+  cow.scale.set(e, cow.scale.y, cow.scale.z);
+});
+stretching.add(options, 'stretchY', 0, 2).onChange((e) => {
+  cow.scale.set(cow.scale.z, e, cow.scale.z);
+});
+stretching.add(options, 'stretchZ', 0, 2).onChange((e) => {
+  cow.scale.set(cow.scale.x, cow.scale.y, e);
+});
 
 function animate(time) {
   scaleTween.update(time);
