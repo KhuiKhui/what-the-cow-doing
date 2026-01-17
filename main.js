@@ -36,9 +36,9 @@ const pointer = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 
 let currentScale = { ...cow.scale };
-let settingsScaleTween = changeScale(2, Easing.Elastic.Out, 1000);
-let scaleTween1 = changeScale(1.1, Easing.Elastic.out, 150);
-let scaleTween2 = changeScale(1, Easing.Elastic.out, 150);
+let settingsScaleTween = changeScale(2, 2, 2, Easing.Elastic.Out, 1000);
+let scaleTween1 = changeScale(1.1, 1.1, 1.1, Easing.Elastic.out, 150);
+let scaleTween2 = changeScale(1, 1, 1, Easing.Elastic.out, 150);
 
 let clickCnt = 0;
 function onCowClick(e) {
@@ -49,8 +49,20 @@ function onCowClick(e) {
   const intersects = raycaster.intersectObject(scene.getObjectByName('cow'));
 
   if (intersects.length > 0) {
-    scaleTween1 = changeScale(currentScale.x * 1.1, Easing.Elastic.out, 50); // why is it 50 wtf?????????????
-    scaleTween2 = changeScale(currentScale.x, Easing.Elastic.out, 50);
+    scaleTween1 = changeScale(
+      currentScale.x * 1.1,
+      currentScale.y * 1.1,
+      currentScale.z * 1.1,
+      Easing.Elastic.out,
+      50,
+    ); // why is it 50 wtf?????????????
+    scaleTween2 = changeScale(
+      currentScale.x,
+      currentScale.y,
+      currentScale.z,
+      Easing.Elastic.out,
+      50,
+    );
     scaleTween1.chain(scaleTween2);
     scaleTween1.start();
 
@@ -60,10 +72,12 @@ function onCowClick(e) {
 
 const removeTween1 = changeScale(
   currentScale.x * 1.5,
+  currentScale.y * 1.5,
+  currentScale.z * 1.5,
   Easing.Exponential.Out,
   400,
 );
-const removeTween2 = changeScale(0, Easing.Exponential.In, 100);
+const removeTween2 = changeScale(0, 0, 0, Easing.Exponential.In, 100);
 function removeCow() {
   removeTween1.chain(
     removeTween2.onComplete(() => {
@@ -79,6 +93,8 @@ const options = {
   x2: () => {
     settingsScaleTween = changeScale(
       Math.min(currentScale.x * 2, 2),
+      Math.min(currentScale.y * 2, 2),
+      Math.min(currentScale.z * 2, 2),
       Easing.Elastic.Out,
       1000,
     );
@@ -87,6 +103,8 @@ const options = {
   'x0.5': () => {
     settingsScaleTween = changeScale(
       currentScale.x * 0.5,
+      currentScale.y * 0.5,
+      currentScale.z * 0.5,
       Easing.Elastic.Out,
       1000,
     );
@@ -100,7 +118,7 @@ const options = {
   reset: () => {
     if (cow) scene.remove(cow);
     scene.add(cow);
-    settingsScaleTween = changeScale(1, Easing.Elastic.Out, 1000);
+    settingsScaleTween = changeScale(1, 1, 1, Easing.Elastic.Out, 1000);
     settingsScaleTween.start();
   },
 };
@@ -112,24 +130,24 @@ scaling.add(options, 'scale', 0, 2).onChange((e) => {
 scaling.add(options, 'x2');
 scaling.add(options, 'x0.5');
 
-function changeScale(target, ease, duration) {
+function changeScale(x, y, z, ease, duration) {
   return new Tween(currentScale)
-    .to({ x: target, y: target, z: target }, duration)
+    .to({ x: x, y: y, z: z }, duration)
     .easing(ease)
     .onUpdate((scale) => {
-      if (cow) cow.scale.set(scale.x, scale.y, scale.z);
+      cow.scale.set(scale.x, scale.y, scale.z);
     });
 }
 
 const stretching = gui.addFolder('Stretching');
 stretching.add(options, 'stretchX', 0, 2).onChange((e) => {
-  cow.scale.set(e, cow.scale.y, cow.scale.z);
+  cow.scale.set(e, currentScale.y, currentScale.z);
 });
 stretching.add(options, 'stretchY', 0, 2).onChange((e) => {
-  cow.scale.set(cow.scale.z, e, cow.scale.z);
+  cow.scale.set(currentScale.x, e, currentScale.z);
 });
 stretching.add(options, 'stretchZ', 0, 2).onChange((e) => {
-  cow.scale.set(cow.scale.x, cow.scale.y, e);
+  cow.scale.set(currentScale.x, currentScale.y, e);
 });
 
 gui.add(options, 'reset');
