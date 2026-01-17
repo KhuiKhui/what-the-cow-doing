@@ -7,6 +7,6 @@ spot.position.set(0, 30, 0);
 spot.castShadow = true;
 spot.intensity = 1;
 spot.decay = 0;
-spot.angle = 0.5;
+spot.angle = 0.75;
 
 export { ambient, spot };
