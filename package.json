@@ -13,6 +13,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.27.0",
   "dependencies": {
+    "@tweenjs/tween.js": "^25.0.0",
     "three": "^0.182.0"
   },
   "devDependencies": {

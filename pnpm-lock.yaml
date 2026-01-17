@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@tweenjs/tween.js':
+        specifier: ^25.0.0
+        version: 25.0.0
       three:
         specifier: ^0.182.0
         version: 0.182.0
@@ -302,6 +305,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@tweenjs/tween.js@25.0.0':
+    resolution: {integrity: sha512-XKLA6syeBUaPzx4j3qwMqzzq+V4uo72BnlbOjmuljLrRqdsd3qnzvZZoxvMHZ23ndsRS4aufU6JOZYpCbU6T1A==}
+
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
@@ -553,6 +559,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.55.1':
     optional: true
+
+  '@tweenjs/tween.js@25.0.0': {}
 
   '@types/estree@1.0.8': {}
 
