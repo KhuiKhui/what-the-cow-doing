@@ -8,10 +8,12 @@ import { ambient, spot } from './js/lights';
 import { plane } from './js/environment';
 import { scene, renderer } from './js/setup';
 import { orbit } from './js/orbit';
+import { moo1, moo2, moo3, moo4, teleport } from './js/sounds';
 
 //SETUP
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+const historyArr = [];
 
 //SCENE ADD
 scene.add(ambient);
@@ -28,18 +30,25 @@ async function loadGLTF() {
   let gltf = await assetLoader.loadAsync(cowUrl.href);
   return gltf.scene;
 }
-const cow = await loadGLTF();
+let cow = await loadGLTF();
 scene.add(cow);
 cow.name = 'cow';
+cow.userData.draggable = true;
 
-const pointer = new THREE.Vector2();
-const raycaster = new THREE.Raycaster();
+const cowCubeUrl = new URL('./public/cow-cube.glb', import.meta.url);
+async function loadCubeGLTF() {
+  let gltf = await assetLoader.loadAsync(cowCubeUrl.href);
+  return gltf.scene;
+}
+let cowCube = await loadCubeGLTF();
 
 let currentScale = { ...cow.scale };
 let settingsScaleTween = changeScale(2, 2, 2, Easing.Elastic.Out, 1000);
 let scaleTween1 = changeScale(1.1, 1.1, 1.1, Easing.Elastic.out, 150);
 let scaleTween2 = changeScale(1, 1, 1, Easing.Elastic.out, 150);
 
+const pointer = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
 let clickCnt = 0;
 function onCowClick(e) {
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -67,6 +76,7 @@ function onCowClick(e) {
     scaleTween1.start();
 
     clickCnt++;
+    moo4.play();
   }
 }
 
@@ -82,10 +92,13 @@ function removeCow() {
   removeTween1.chain(
     removeTween2.onComplete(() => {
       scene.remove(cow);
+      teleport.play();
     }),
   );
   removeTween1.start();
 }
+
+let mixer;
 
 const gui = new GUI();
 const options = {
@@ -99,6 +112,7 @@ const options = {
       1000,
     );
     settingsScaleTween.start();
+    historyArr.unshift('x2');
   },
   'x0.5': () => {
     settingsScaleTween = changeScale(
@@ -109,17 +123,81 @@ const options = {
       1000,
     );
     settingsScaleTween.start();
+    historyArr.unshift('x0.5');
   },
 
   stretchX: 1,
   stretchY: 1,
   stretchZ: 1,
 
-  reset: () => {
-    if (cow) scene.remove(cow);
+  horizontal: () => {
+    settingsScaleTween = changeScale(
+      currentScale.x,
+      currentScale.y,
+      currentScale.z * 0.1,
+      Easing.Exponential.Out,
+      50,
+    );
+    settingsScaleTween.start();
+    moo1.play();
+    historyArr.unshift('horizontal squish');
+  },
+
+  vertical: () => {
+    settingsScaleTween = changeScale(
+      currentScale.x,
+      currentScale.y * 0.1,
+      currentScale.z,
+      Easing.Exponential.Out,
+      50,
+    );
+    settingsScaleTween.start();
+    moo2.play();
+    historyArr.unshift('vertical squish');
+  },
+
+  reset: async () => {
+    scene.remove(cow);
+    scene.remove(cowCube);
     scene.add(cow);
+
+    clickCnt = 0;
+
+    cow.position.set(0, 0, 0);
     settingsScaleTween = changeScale(1, 1, 1, Easing.Elastic.Out, 1000);
     settingsScaleTween.start();
+    moo3.play();
+    historyArr.unshift('reset');
+  },
+
+  'prison realm': async () => {
+    if (scene.getObjectByName('cow')) {
+      const cowToCubeUrl = new URL('./public/cow-to-cube.glb', import.meta.url);
+      async function loadAnimatedGLTF() {
+        let gltf = await assetLoader.loadAsync(cowToCubeUrl.href);
+        return gltf;
+      }
+      const cowToCubeGltf = await loadAnimatedGLTF();
+      const cowToCube = cowToCubeGltf.scene;
+
+      scene.add(cowToCube);
+      mixer = new THREE.AnimationMixer(cowToCube);
+      const clips = cowToCubeGltf.animations;
+
+      const clip = clips[0];
+      const action = mixer.clipAction(clip);
+
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.play();
+
+      scene.remove(cow);
+      mixer.addEventListener('finished', () => {
+        scene.add(cowCube);
+        scene.remove(cowToCube);
+      });
+      historyArr.unshift('prison realm');
+    }
   },
 };
 
@@ -150,9 +228,32 @@ stretching.add(options, 'stretchZ', 0, 2).onChange((e) => {
   cow.scale.set(currentScale.x, currentScale.y, e);
 });
 
+const squishing = gui.addFolder('Squishing');
+squishing.add(options, 'horizontal');
+squishing.add(options, 'vertical');
+
+const misc = gui.addFolder('Miscellaneous');
+misc.add(options, 'prison realm');
 gui.add(options, 'reset');
 
+function updateHtml() {
+  document.getElementsByName('clicks')[0].innerHTML =
+    `clicks until destruction: ${10 - clickCnt}`;
+  document.getElementsByName('position')[0].innerHTML =
+    `current position: (${cow.position.x}, ${cow.position.y}, ${cow.position.z})`;
+  document.getElementsByName('scale')[0].innerHTML =
+    `current scale: (${cow.scale.x}, ${cow.scale.y}, ${cow.scale.z})`;
+  document.getElementsByName('rotation')[0].innerHTML =
+    `current rotation: (${cow.rotation.x}, ${cow.rotation.y}, ${cow.rotation.z})`;
+  document.getElementsByName('history')[0].innerHTML =
+    `history: ${historyArr.map((history) => ' ' + history)}`;
+}
+
+const clock = new THREE.Clock();
 function animate(time) {
+  updateHtml();
+  if (mixer) mixer.update(clock.getDelta());
+  if (historyArr.length >= 4) historyArr.pop();
   settingsScaleTween.update(time);
   scaleTween1.update(time);
   scaleTween2.update(time);

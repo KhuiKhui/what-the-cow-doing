@@ -12,3 +12,30 @@ body {
   font-weight: bold;
   padding-top: 10px;
 }
+
+#stats-container {
+  position: absolute;
+  z-index: 100;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: fit-content;
+  color: white;
+}
+
+#stats {
+  padding-top: 10px;
+}
+
+#footer {
+  color: white;
+  width: 98%;
+  position: absolute;
+  top: 94.3%;
+  padding: 16px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
