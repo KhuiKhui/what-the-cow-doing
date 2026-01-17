@@ -6,31 +6,31 @@ camera.add(listener);
 const audioLoader = new THREE.AudioLoader();
 
 const moo1 = new THREE.Audio(listener);
-audioLoader.load('public/moo.mp3', function (buffer) {
+audioLoader.load('moo.mp3', function (buffer) {
   moo1.setBuffer(buffer);
   moo1.setVolume(0.5);
 });
 
 const moo2 = new THREE.Audio(listener);
-audioLoader.load('public/moo2.mp3', function (buffer) {
+audioLoader.load('moo2.mp3', function (buffer) {
   moo2.setBuffer(buffer);
   moo2.setVolume(0.5);
 });
 
 const moo3 = new THREE.Audio(listener);
-audioLoader.load('public/moo3.wav', function (buffer) {
+audioLoader.load('moo3.wav', function (buffer) {
   moo3.setBuffer(buffer);
   moo3.setVolume(0.5);
 });
 
 const moo4 = new THREE.Audio(listener);
-audioLoader.load('public/moo4.wav', function (buffer) {
+audioLoader.load('moo4.wav', function (buffer) {
   moo4.setBuffer(buffer);
   moo4.setVolume(0.5);
 });
 
 const teleport = new THREE.Audio(listener);
-audioLoader.load('public/teleport.mp3', function (buffer) {
+audioLoader.load('teleport.mp3', function (buffer) {
   teleport.setBuffer(buffer);
   teleport.setVolume(0.4);
 });
