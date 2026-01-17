@@ -30,15 +30,41 @@ async function loadGLTF() {
 }
 const cow = await loadGLTF();
 scene.add(cow);
+cow.name = 'cow';
+
+const pointer = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
+
+let currentScale = { ...cow.scale };
+let settingsScaleTween = changeScale(2, Easing.Elastic.Out, 1000);
+let scaleTween1 = changeScale(1.1, Easing.Elastic.out, 150);
+let scaleTween2 = changeScale(1, Easing.Elastic.out, 150);
+
+function onCowClick(e) {
+  pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObject(scene.getObjectByName('cow'));
+
+  if (intersects.length > 0) {
+    scaleTween1 = changeScale(1.1, Easing.Elastic.out, 50); // why is it 50 wtf?????????????
+    scaleTween2 = changeScale(1, Easing.Elastic.out, 50);
+    scaleTween1.chain(scaleTween2);
+    scaleTween1.start();
+  }
+}
 
 const gui = new GUI();
 const options = {
   scale: 1,
   x2: () => {
-    changeScale(2, Easing.Elastic.Out);
+    settingsScaleTween = changeScale(2, Easing.Elastic.Out, 1000);
+    settingsScaleTween.start();
   },
   'x0.5': () => {
-    changeScale(0.5, Easing.Elastic.Out);
+    settingsScaleTween = changeScale(0.5, Easing.Elastic.Out, 1000);
+    settingsScaleTween.start();
   },
 
   stretchX: 1,
@@ -53,17 +79,13 @@ scaling.add(options, 'scale', 0, 2).onChange((e) => {
 scaling.add(options, 'x2');
 scaling.add(options, 'x0.5');
 
-let currentScale = { ...cow.scale };
-const scaleTween = new Tween(currentScale);
-
-function changeScale(target, ease) {
-  scaleTween
-    .to({ x: target, y: target, z: target }, 1000)
+function changeScale(target, ease, duration) {
+  return new Tween(currentScale)
+    .to({ x: target, y: target, z: target }, duration)
     .easing(ease)
     .onUpdate((scale) => {
       if (cow) cow.scale.set(scale.x, scale.y, scale.z);
-    })
-    .start();
+    });
 }
 
 const stretching = gui.addFolder('Stretching');
@@ -78,7 +100,9 @@ stretching.add(options, 'stretchZ', 0, 2).onChange((e) => {
 });
 
 function animate(time) {
-  scaleTween.update(time);
+  settingsScaleTween.update(time);
+  scaleTween1.update(time);
+  scaleTween2.update(time);
   currentScale = { ...cow.scale };
   renderer.render(scene, camera);
 }
@@ -89,3 +113,5 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+window.addEventListener('click', onCowClick);
