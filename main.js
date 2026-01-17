@@ -17,8 +17,8 @@ document.body.appendChild(renderer.domElement);
 scene.add(ambient);
 scene.add(spot);
 scene.add(plane);
-scene.add(axesHelper);
-scene.add(sLightHelper);
+// scene.add(axesHelper);
+// scene.add(sLightHelper);
 
 orbit.update();
 
@@ -40,6 +40,7 @@ let settingsScaleTween = changeScale(2, Easing.Elastic.Out, 1000);
 let scaleTween1 = changeScale(1.1, Easing.Elastic.out, 150);
 let scaleTween2 = changeScale(1, Easing.Elastic.out, 150);
 
+let clickCnt = 0;
 function onCowClick(e) {
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -48,28 +49,60 @@ function onCowClick(e) {
   const intersects = raycaster.intersectObject(scene.getObjectByName('cow'));
 
   if (intersects.length > 0) {
-    scaleTween1 = changeScale(1.1, Easing.Elastic.out, 50); // why is it 50 wtf?????????????
-    scaleTween2 = changeScale(1, Easing.Elastic.out, 50);
+    scaleTween1 = changeScale(currentScale.x * 1.1, Easing.Elastic.out, 50); // why is it 50 wtf?????????????
+    scaleTween2 = changeScale(currentScale.x, Easing.Elastic.out, 50);
     scaleTween1.chain(scaleTween2);
     scaleTween1.start();
+
+    clickCnt++;
   }
+}
+
+const removeTween1 = changeScale(
+  currentScale.x * 1.5,
+  Easing.Exponential.Out,
+  400,
+);
+const removeTween2 = changeScale(0, Easing.Exponential.In, 100);
+function removeCow() {
+  removeTween1.chain(
+    removeTween2.onComplete(() => {
+      scene.remove(cow);
+    }),
+  );
+  removeTween1.start();
 }
 
 const gui = new GUI();
 const options = {
   scale: 1,
   x2: () => {
-    settingsScaleTween = changeScale(2, Easing.Elastic.Out, 1000);
+    settingsScaleTween = changeScale(
+      Math.min(currentScale.x * 2, 2),
+      Easing.Elastic.Out,
+      1000,
+    );
     settingsScaleTween.start();
   },
   'x0.5': () => {
-    settingsScaleTween = changeScale(0.5, Easing.Elastic.Out, 1000);
+    settingsScaleTween = changeScale(
+      currentScale.x * 0.5,
+      Easing.Elastic.Out,
+      1000,
+    );
     settingsScaleTween.start();
   },
 
   stretchX: 1,
   stretchY: 1,
   stretchZ: 1,
+
+  reset: () => {
+    if (cow) scene.remove(cow);
+    scene.add(cow);
+    settingsScaleTween = changeScale(1, Easing.Elastic.Out, 1000);
+    settingsScaleTween.start();
+  },
 };
 
 const scaling = gui.addFolder('Scaling');
@@ -99,11 +132,21 @@ stretching.add(options, 'stretchZ', 0, 2).onChange((e) => {
   cow.scale.set(cow.scale.x, cow.scale.y, e);
 });
 
+gui.add(options, 'reset');
+
 function animate(time) {
   settingsScaleTween.update(time);
   scaleTween1.update(time);
   scaleTween2.update(time);
+  removeTween1.update(time);
+  removeTween2.update(time);
   currentScale = { ...cow.scale };
+
+  if (clickCnt >= 10) {
+    removeCow();
+    clickCnt = 0;
+  }
+
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
