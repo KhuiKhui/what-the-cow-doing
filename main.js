@@ -3,13 +3,12 @@ import { Tween, Easing } from '@tweenjs/tween.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import GUI from 'lil-gui';
 import { camera } from './js/camera';
-import { axesHelper, sLightHelper } from './js/helpers';
 import { ambient, spot } from './js/lights';
 import { plane } from './js/environment';
 import { scene, renderer } from './js/setup';
 import { orbit } from './js/orbit';
 import { moo1, moo2, moo3, moo4, teleport, crack } from './js/sounds';
-import { DragControls } from 'three/examples/jsm/Addons.js';
+import bg from './public/bg.jpg';
 
 //SETUP
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -173,6 +172,7 @@ const options = {
 
     clickCnt = 0;
 
+    cow.position.set(0, 0, 0);
     settingsScaleTween = changeScale(1, 1, 1, Easing.Elastic.Out, 1000);
     settingsScaleTween.start();
     moo3.play();
@@ -246,6 +246,8 @@ const options = {
     }
   },
   idle: false,
+  plane: true,
+  background: false,
 };
 
 const idleTween1 = changePos(
@@ -255,11 +257,11 @@ const idleTween1 = changePos(
   Easing.Cubic.InOut,
   1500,
 );
-idleTween1.repeat(Infinity);
-idleTween1.yoyo(true);
-idleTween1.delay(20);
 // const removeTween2 = changeScale(0, 0, 0, Easing.Exponential.In, 100);
 function idleCow() {
+  idleTween1.repeat(Infinity);
+  idleTween1.yoyo(true);
+  idleTween1.delay(20);
   idleTween1.start();
 }
 const general = gui.addFolder('General');
@@ -269,6 +271,15 @@ general.add(options, 'idle').onChange((e) => {
     idleTween1.yoyo(false);
     idleTween1.repeat(0);
   }
+});
+general.add(options, 'plane').onChange((e) => {
+  plane.visible = e;
+});
+
+const texture = new THREE.TextureLoader();
+general.add(options, 'background').onChange((e) => {
+  if (e) scene.background = texture.load(bg);
+  else scene.background = null;
 });
 
 const scaling = gui.addFolder('Scaling');
