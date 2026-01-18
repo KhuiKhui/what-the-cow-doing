@@ -35,4 +35,9 @@ audioLoader.load('teleport.mp3', function (buffer) {
   teleport.setVolume(0.4);
 });
 
-export { moo1, moo2, moo3, moo4, teleport };
+const crack = new THREE.Audio(listener);
+audioLoader.load('crack.mp3', function (buffer) {
+  crack.setBuffer(buffer);
+  crack.setVolume(0.5);
+});
+export { moo1, moo2, moo3, moo4, teleport, crack };

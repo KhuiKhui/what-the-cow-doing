@@ -8,7 +8,8 @@ import { ambient, spot } from './js/lights';
 import { plane } from './js/environment';
 import { scene, renderer } from './js/setup';
 import { orbit } from './js/orbit';
-import { moo1, moo2, moo3, moo4, teleport } from './js/sounds';
+import { moo1, moo2, moo3, moo4, teleport, crack } from './js/sounds';
+import { DragControls } from 'three/examples/jsm/Addons.js';
 
 //SETUP
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -42,6 +43,12 @@ async function loadCubeGLTF() {
 }
 let cowCube = await loadCubeGLTF();
 
+const cowBallUrl = new URL('./public/cow-ball.glb', import.meta.url);
+async function loadBallGLTF() {
+  let gltf = await assetLoader.loadAsync(cowBallUrl.href);
+  return gltf.scene;
+}
+let cowBall = await loadBallGLTF();
 let currentScale = { ...cow.scale };
 let settingsScaleTween = changeScale(2, 2, 2, Easing.Elastic.Out, 1000);
 let scaleTween1 = changeScale(1.1, 1.1, 1.1, Easing.Elastic.out, 150);
@@ -96,6 +103,8 @@ function removeCow() {
     }),
   );
   removeTween1.start();
+  idleTween1.stop();
+  cow.position.set(0, 0, 0);
 }
 
 let mixer;
@@ -159,15 +168,50 @@ const options = {
   reset: async () => {
     scene.remove(cow);
     scene.remove(cowCube);
+    scene.remove(cowBall);
     scene.add(cow);
 
     clickCnt = 0;
 
-    cow.position.set(0, 0, 0);
     settingsScaleTween = changeScale(1, 1, 1, Easing.Elastic.Out, 1000);
     settingsScaleTween.start();
     moo3.play();
     historyArr.unshift('reset');
+  },
+
+  cowball: async () => {
+    if (scene.getObjectByName('cow')) {
+      const cowToSphereUrl = new URL(
+        './public/cow-to-ball.glb',
+        import.meta.url,
+      );
+      async function loadAnimatedGLTF() {
+        let gltf = await assetLoader.loadAsync(cowToSphereUrl.href);
+        return gltf;
+      }
+      const cowToCubeGltf = await loadAnimatedGLTF();
+      const cowToCube = cowToCubeGltf.scene;
+
+      scene.add(cowToCube);
+      mixer = new THREE.AnimationMixer(cowToCube);
+      const clips = cowToCubeGltf.animations;
+
+      const clip = clips[0];
+      const action = mixer.clipAction(clip);
+
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.play();
+
+      crack.play();
+
+      scene.remove(cow);
+      mixer.addEventListener('finished', () => {
+        scene.add(cowBall);
+        scene.remove(cowToCube);
+      });
+      historyArr.unshift('cowball');
+    }
   },
 
   'prison realm': async () => {
@@ -191,6 +235,8 @@ const options = {
       action.clampWhenFinished = true;
       action.play();
 
+      crack.play();
+
       scene.remove(cow);
       mixer.addEventListener('finished', () => {
         scene.add(cowCube);
@@ -199,7 +245,31 @@ const options = {
       historyArr.unshift('prison realm');
     }
   },
+  idle: false,
 };
+
+const idleTween1 = changePos(
+  cow.position.x,
+  cow.position.y + 3,
+  cow.position.z,
+  Easing.Cubic.InOut,
+  1500,
+);
+idleTween1.repeat(Infinity);
+idleTween1.yoyo(true);
+idleTween1.delay(20);
+// const removeTween2 = changeScale(0, 0, 0, Easing.Exponential.In, 100);
+function idleCow() {
+  idleTween1.start();
+}
+const general = gui.addFolder('General');
+general.add(options, 'idle').onChange((e) => {
+  if (e) idleCow();
+  else {
+    idleTween1.yoyo(false);
+    idleTween1.repeat(0);
+  }
+});
 
 const scaling = gui.addFolder('Scaling');
 scaling.add(options, 'scale', 0, 2).onChange((e) => {
@@ -217,6 +287,14 @@ function changeScale(x, y, z, ease, duration) {
     });
 }
 
+function changePos(x, y, z, ease, duration) {
+  return new Tween({ ...cow.position })
+    .to({ x: x, y: y, z: z }, duration)
+    .easing(ease)
+    .onUpdate((pos) => {
+      cow.position.set(pos.x, pos.y, pos.z);
+    });
+}
 const stretching = gui.addFolder('Stretching');
 stretching.add(options, 'stretchX', 0, 2).onChange((e) => {
   cow.scale.set(e, currentScale.y, currentScale.z);
@@ -232,8 +310,9 @@ const squishing = gui.addFolder('Squishing');
 squishing.add(options, 'horizontal');
 squishing.add(options, 'vertical');
 
-const misc = gui.addFolder('Miscellaneous');
-misc.add(options, 'prison realm');
+const morph = gui.addFolder('Morphing');
+morph.add(options, 'cowball');
+morph.add(options, 'prison realm');
 gui.add(options, 'reset');
 
 function updateHtml() {
@@ -259,6 +338,7 @@ function animate(time) {
   scaleTween2.update(time);
   removeTween1.update(time);
   removeTween2.update(time);
+  idleTween1.update(time);
   currentScale = { ...cow.scale };
 
   if (clickCnt >= 10) {
